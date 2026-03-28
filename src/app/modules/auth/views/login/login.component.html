@@ -1,0 +1,117 @@
+<div class="login">
+
+  <!-- ── Panel izquierdo: branding ──────────────────────────── -->
+  <aside class="login__brand">
+    <div class="login__brand-inner">
+      <div class="login__logo">
+        <mat-icon class="login__logo-icon">rocket_launch</mat-icon>
+        <div class="login__logo-text">
+          <span class="login__logo-name">Minutegram</span>
+          <span class="login__logo-tag">Deploy Planner</span>
+        </div>
+      </div>
+
+      <div class="login__headline">
+        <h1>Pases a producción,<br /><em>coordinados al detalle.</em></h1>
+        <p>Planifica, documenta y ejecuta cada despliegue con tu equipo de forma clara y eficiente.</p>
+      </div>
+
+      <ul class="login__features">
+        <li>
+          <span class="login__feat-icon"><mat-icon>schedule</mat-icon></span>
+          <span>Minutogramas detallados por fases</span>
+        </li>
+        <li>
+          <span class="login__feat-icon"><mat-icon>checklist</mat-icon></span>
+          <span>Control de prerrequisitos por responsable</span>
+        </li>
+        <li>
+          <span class="login__feat-icon"><mat-icon>download</mat-icon></span>
+          <span>Exportación a Excel con un clic</span>
+        </li>
+        <li>
+          <span class="login__feat-icon"><mat-icon>group</mat-icon></span>
+          <span>Roles y permisos por usuario</span>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- ── Panel derecho: formulario ─────────────────────────── -->
+  <main class="login__form-panel">
+    <div class="login__form-wrap">
+
+      <div class="login__mobile-logo">
+        <mat-icon>rocket_launch</mat-icon>
+        <span>Minutegram</span>
+      </div>
+
+      <div class="login__form-header">
+        <h2>Bienvenido de vuelta</h2>
+        <p>Ingresa con tus credenciales de equipo</p>
+      </div>
+
+      @if (error()) {
+        <div class="login__error" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <form class="login__form" (ngSubmit)="submit()" #f="ngForm" novalidate>
+        <mat-form-field appearance="outline" class="login__field">
+          <mat-label>Correo electrónico</mat-label>
+          <input
+            matInput
+            type="email"
+            [(ngModel)]="email"
+            name="email"
+            required
+            autocomplete="email"
+            [disabled]="loading()"
+          />
+          <mat-icon matSuffix>alternate_email</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="login__field">
+          <mat-label>Contraseña</mat-label>
+          <input
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            [(ngModel)]="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            [disabled]="loading()"
+          />
+          <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" [disabled]="loading()">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          class="login__submit"
+          type="submit"
+          [disabled]="loading() || !email || !password"
+        >
+          @if (loading()) {
+            <mat-spinner diameter="20" class="login__spinner" />
+            <span>Verificando…</span>
+          } @else {
+            <ng-container>
+              <mat-icon>login</mat-icon>
+              <span>Ingresar</span>
+            </ng-container>
+          }
+        </button>
+      </form>
+
+      <p class="login__footer-note">
+        Solo usuarios del equipo autorizados pueden acceder.
+      </p>
+
+    </div>
+  </main>
+
+</div>

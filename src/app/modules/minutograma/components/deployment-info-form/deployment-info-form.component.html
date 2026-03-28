@@ -1,0 +1,46 @@
+<form [formGroup]="form" class="deployment-form">
+  <div class="deployment-form__grid">
+
+    <mat-form-field appearance="outline" class="deployment-form__field">
+      <mat-label>Proyecto</mat-label>
+      <input matInput formControlName="project" placeholder="Nombre del proyecto" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="deployment-form__field">
+      <mat-label>Sprint</mat-label>
+      <input matInput formControlName="sprint" type="number" min="1" placeholder="20" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="deployment-form__field">
+      <mat-label>Versión</mat-label>
+      <input matInput formControlName="version" placeholder="Ej: 1.0.0" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="deployment-form__field">
+      <mat-label>Responsables</mat-label>
+      <mat-select formControlName="responsible" multiple>
+        @for (opt of responsibles(); track opt) {
+          <mat-option [value]="opt">{{ opt }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="deployment-form__field">
+      <mat-label>Fecha de despliegue</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="date" placeholder="DD/MM/AAAA" />
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="deployment-form__field deployment-form__field--full">
+      <mat-label>Descripción</mat-label>
+      <textarea
+        matInput
+        formControlName="description"
+        rows="3"
+        placeholder="Descripción del despliegue"
+      ></textarea>
+    </mat-form-field>
+
+  </div>
+</form>

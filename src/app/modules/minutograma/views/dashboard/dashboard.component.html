@@ -1,0 +1,226 @@
+<div class="dash">
+
+  <!-- ── Navbar ─────────────────────────────────────────────────────────── -->
+  <header class="dash__navbar">
+    <div class="dash__navbar-brand">
+      <mat-icon class="dash__navbar-icon">rocket_launch</mat-icon>
+      <div class="dash__navbar-text">
+        <span class="dash__navbar-title">Minutegram</span>
+        <span class="dash__navbar-sub">Deploy Planner</span>
+      </div>
+    </div>
+
+    <div class="dash__navbar-actions">
+      @if (auth.isAdmin()) {
+        <button
+          mat-flat-button
+          class="mg-btn-gradient"
+          (click)="createNew()"
+          [disabled]="creating()"
+          matTooltip="Crear nuevo minutograma"
+        >
+          @if (creating()) {
+            <mat-spinner diameter="16" />
+          } @else {
+            <ng-container>
+              <mat-icon>add</mat-icon>
+              Nuevo minutograma
+            </ng-container>
+          }
+        </button>
+      }
+
+      <div class="dash__user" [matTooltip]="auth.user()?.email ?? ''">
+        <span class="dash__user-avatar">{{ initials(auth.user()?.email ?? '') }}</span>
+        <div class="dash__user-info">
+          <span class="dash__user-name">{{ auth.user()?.fullName }}</span>
+          @if (auth.isAdmin()) {
+            <span class="dash__role-badge">Admin</span>
+          }
+        </div>
+      </div>
+
+      <button mat-icon-button class="dash__logout-btn" (click)="logout()" matTooltip="Cerrar sesión">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Search bar ─────────────────────────────────────────────────────── -->
+  <div class="dash__search-bar">
+    <div class="dash__search-inner">
+      <div class="dash__search-wrap">
+        <mat-icon class="dash__search-icon">search</mat-icon>
+        <input
+          class="dash__search-input"
+          type="text"
+          [(ngModel)]="search"
+          (ngModelChange)="onSearch()"
+          placeholder="Buscar por proyecto, sprint o versión…"
+        />
+        @if (search) {
+          <button class="dash__search-clear" (click)="clearSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+
+      @if (!loading()) {
+        <span class="dash__count">
+          @if (search) {
+            {{ summaries().length }} de {{ total() }} resultado(s)
+          } @else {
+            {{ total() }} minutograma(s)
+          }
+        </span>
+      }
+    </div>
+  </div>
+
+  <!-- ── Content ────────────────────────────────────────────────────────── -->
+  <main class="dash__content">
+
+    @if (loading() && summaries().length === 0) {
+      <!-- Skeleton loader -->
+      <div class="dash__grid">
+        @for (n of [1,2,3,4,5,6]; track n) {
+          <div class="dash__skeleton"></div>
+        }
+      </div>
+    } @else if (summaries().length === 0) {
+      <div class="dash__empty">
+        <div class="dash__empty-icon">
+          <mat-icon>rocket_launch</mat-icon>
+        </div>
+        <h3>
+          @if (search) { No se encontraron resultados } @else { Sin minutogramas aún }
+        </h3>
+        <p>
+          @if (search) {
+            Intenta con otro término de búsqueda.
+          } @else if (auth.isAdmin()) {
+            Crea el primero para comenzar a planificar tus pases a producción.
+          } @else {
+            El administrador aún no ha creado minutogramas.
+          }
+        </p>
+        @if (!search && auth.isAdmin()) {
+          <button mat-flat-button class="mg-btn-gradient dash__empty-btn" (click)="createNew()">
+            <mat-icon>add</mat-icon>
+            Crear primer minutograma
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="dash__grid">
+        @for (m of summaries(); track m.id) {
+          <article class="dash__card" (click)="open(m.id)" role="button" tabindex="0"
+            (keydown.enter)="open(m.id)">
+
+            <div class="dash__card-top">
+              <h3 class="dash__card-title">{{ m.project || 'Sin nombre' }}</h3>
+              @if (auth.isAdmin()) {
+                <div class="dash__card-actions">
+                  <button
+                    class="dash__card-clone"
+                    [disabled]="cloningIds().has(m.id)"
+                    matTooltip="Clonar minutograma"
+                    (click)="clone(m, $event)"
+                    aria-label="Clonar minutograma"
+                  >
+                    @if (cloningIds().has(m.id)) {
+                      <mat-spinner diameter="14" />
+                    } @else {
+                      <mat-icon>content_copy</mat-icon>
+                    }
+                  </button>
+                  <button
+                    class="dash__card-del"
+                    matTooltip="Eliminar"
+                    (click)="confirmDelete(m, $event)"
+                    aria-label="Eliminar minutograma"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+
+            <div class="dash__card-chips">
+              @if (m.sprint) {
+                <span class="dash__chip dash__chip--sprint">
+                  <mat-icon>tag</mat-icon> Sprint {{ m.sprint }}
+                </span>
+              }
+              @if (m.version) {
+                <span class="dash__chip">
+                  <mat-icon>new_releases</mat-icon> {{ m.version }}
+                </span>
+              }
+              @if (m.date) {
+                <span class="dash__chip">
+                  <mat-icon>event</mat-icon> {{ m.date }}
+                </span>
+              }
+            </div>
+
+            @if (m.responsible) {
+              <div class="dash__card-responsible">
+                <mat-icon>group</mat-icon>
+                <span>{{ m.responsible }}</span>
+              </div>
+            }
+
+            <div class="dash__card-stats">
+              <span class="dash__stat">
+                <mat-icon>layers</mat-icon>
+                {{ m.phasesCount }} fase{{ m.phasesCount !== 1 ? 's' : '' }}
+              </span>
+              <span class="dash__stat">
+                <mat-icon>checklist_rtl</mat-icon>
+                {{ m.stepsCount }} paso{{ m.stepsCount !== 1 ? 's' : '' }}
+              </span>
+              <span class="dash__stat">
+                <mat-icon>rule</mat-icon>
+                {{ m.prerequisitesCount }} prereq.
+              </span>
+            </div>
+
+            <div class="dash__card-footer">
+              <span class="dash__card-updated">
+                <mat-icon>update</mat-icon>
+                {{ m.updatedAt | date:'dd/MM/yy · HH:mm' }}
+              </span>
+              <span class="dash__card-open">
+                Abrir <mat-icon>arrow_forward</mat-icon>
+              </span>
+            </div>
+
+          </article>
+        }
+      </div>
+
+      @if (hasMore()) {
+        <div class="dash__load-more">
+          <button
+            mat-stroked-button
+            class="dash__load-btn"
+            (click)="loadMore()"
+            [disabled]="loading()"
+          >
+            @if (loading()) {
+              <mat-spinner diameter="18" />
+            } @else {
+              <ng-container>
+                <mat-icon>expand_more</mat-icon>
+                Ver más ({{ total() - summaries().length }} restantes)
+              </ng-container>
+            }
+          </button>
+        </div>
+      }
+    }
+
+  </main>
+
+</div>

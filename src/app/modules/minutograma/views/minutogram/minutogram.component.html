@@ -1,0 +1,185 @@
+<div class="minutograma">
+
+  <!-- ── Navbar ───────────────────────────────────────────────────────────── -->
+  <header class="minutograma__navbar">
+    <div class="minutograma__navbar-start">
+      <button mat-icon-button class="minutograma__back-btn" (click)="goBack()" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="minutograma__navbar-brand">
+        <mat-icon class="minutograma__navbar-icon">rocket_launch</mat-icon>
+        <span class="minutograma__navbar-title">Minutegram</span>
+      </div>
+      @if (deploymentInfo().project) {
+        <span class="minutograma__navbar-breadcrumb">
+          <mat-icon class="minutograma__navbar-chevron">chevron_right</mat-icon>
+          <span class="minutograma__navbar-project">{{ deploymentInfo().project }}</span>
+        </span>
+      }
+    </div>
+
+    <div class="minutograma__navbar-actions">
+      <button
+        mat-flat-button
+        class="mg-btn-outline"
+        (click)="save()"
+        [disabled]="saving()"
+      >
+        @if (saving()) {
+          <mat-spinner class="minutograma__btn-spinner" diameter="16" />
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
+        Guardar
+      </button>
+      <button mat-flat-button class="mg-btn-gradient" (click)="exportExcel()">
+        <mat-icon>download</mat-icon>
+        Exportar Excel
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Hero stats bar ───────────────────────────────────────────────────── -->
+  <div class="minutograma__hero">
+    <div class="minutograma__hero-inner">
+      <div class="minutograma__hero-left">
+        <h1 class="minutograma__hero-title">
+          {{ deploymentInfo().project || 'Nuevo minutograma' }}
+        </h1>
+        <div class="minutograma__hero-meta">
+          @if (deploymentInfo().sprint) {
+            <span class="minutograma__hero-tag">Sprint {{ deploymentInfo().sprint }}</span>
+          }
+          @if (deploymentInfo().version) {
+            <span class="minutograma__hero-tag">{{ deploymentInfo().version }}</span>
+          }
+          @if (deploymentInfo().date) {
+            <span class="minutograma__hero-tag">
+              <mat-icon>event</mat-icon>
+              {{ deploymentInfo().date }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="minutograma__hero-stats">
+        <div class="minutograma__hero-stat">
+          <mat-icon>view_timeline</mat-icon>
+          <div class="minutograma__hero-stat-info">
+            <strong>{{ phases().length }}</strong>
+            <small>Fases</small>
+          </div>
+        </div>
+        <div class="minutograma__hero-stat">
+          <mat-icon>format_list_numbered</mat-icon>
+          <div class="minutograma__hero-stat-info">
+            <strong>{{ steps().length }}</strong>
+            <small>Pasos</small>
+          </div>
+        </div>
+        <div class="minutograma__hero-stat">
+          <mat-icon>checklist_rtl</mat-icon>
+          <div class="minutograma__hero-stat-info">
+            <strong>{{ prerequisites().length }}</strong>
+            <small>Prereqs</small>
+          </div>
+        </div>
+        @if (totalDuration() > 0) {
+          <div class="minutograma__hero-stat minutograma__hero-stat--timer">
+            <mat-icon>timer</mat-icon>
+            <div class="minutograma__hero-stat-info">
+              <strong>{{ totalDuration() }}</strong>
+              <small>min total</small>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Loading ──────────────────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="minutograma__loading">
+      <mat-spinner diameter="48" />
+      <p>Cargando minutograma...</p>
+    </div>
+  } @else {
+
+    <!-- ── Content ────────────────────────────────────────────────────────── -->
+    <main class="minutograma__content">
+
+      <!-- 01 · Información del Despliegue -->
+      <section class="minutograma__card minutograma__card--info">
+        <div class="minutograma__card-header">
+          <span class="minutograma__card-step">01</span>
+          <div class="minutograma__card-icon-wrap">
+            <mat-icon class="minutograma__card-icon">rocket_launch</mat-icon>
+          </div>
+          <div class="minutograma__card-title-group">
+            <h2 class="minutograma__card-title">Información del Despliegue</h2>
+            <p class="minutograma__card-subtitle">Datos generales del pase a producción</p>
+          </div>
+        </div>
+        <div class="minutograma__card-body">
+          <app-deployment-info-form
+            [initialData]="deploymentInfo()"
+            (infoChange)="onInfoChange($event)"
+          />
+        </div>
+      </section>
+
+      <!-- 02 · Prerrequisitos -->
+      <section class="minutograma__card minutograma__card--prereq">
+        <div class="minutograma__card-header">
+          <span class="minutograma__card-step">02</span>
+          <div class="minutograma__card-icon-wrap">
+            <mat-icon class="minutograma__card-icon">checklist_rtl</mat-icon>
+          </div>
+          <div class="minutograma__card-title-group">
+            <h2 class="minutograma__card-title">Prerrequisitos</h2>
+            <p class="minutograma__card-subtitle">Condiciones previas al inicio del pase</p>
+          </div>
+          @if (prerequisites().length > 0) {
+            <span class="minutograma__card-badge">{{ prerequisites().length }}</span>
+          }
+        </div>
+        <app-prerequisites-table />
+      </section>
+
+      <!-- 03 · Minutograma -->
+      <section class="minutograma__card minutograma__card--table">
+        <div class="minutograma__card-header">
+          <span class="minutograma__card-step">03</span>
+          <div class="minutograma__card-icon-wrap">
+            <mat-icon class="minutograma__card-icon">schedule</mat-icon>
+          </div>
+          <div class="minutograma__card-title-group">
+            <h2 class="minutograma__card-title">Minutograma</h2>
+            <p class="minutograma__card-subtitle">Cronología de actividades por fase</p>
+          </div>
+          @if (totalDuration() > 0) {
+            <span class="minutograma__card-badge minutograma__card-badge--timer">
+              <mat-icon>timer</mat-icon>
+              {{ totalDuration() }} min
+            </span>
+          }
+        </div>
+        <app-minutograma-table />
+      </section>
+
+    </main>
+
+  }
+
+  <!-- ── Footer ───────────────────────────────────────────────────────────── -->
+  <footer class="minutograma__footer">
+    <span>Minutegram Deploy Planner</span>
+    <span class="minutograma__footer-dot">·</span>
+    <span>{{ auth.user()?.email }}</span>
+    @if (auth.isAdmin()) {
+      <span class="minutograma__footer-dot">·</span>
+      <span class="minutograma__footer-admin">Admin</span>
+    }
+  </footer>
+
+</div>

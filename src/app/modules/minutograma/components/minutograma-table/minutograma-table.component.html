@@ -1,0 +1,284 @@
+<div class="minutograma-table">
+
+  <!-- ── Empty: no phases ──────────────────────────────────────────────────── -->
+  @if (service.phases().length === 0 && service.steps().length === 0) {
+    <div class="minutograma-table__empty-phases">
+      <mat-icon>account_tree</mat-icon>
+      <p>Sin fases definidas. Crea una fase para comenzar a agregar pasos.</p>
+      <button mat-flat-button color="primary" (click)="addPhase()">
+        <mat-icon>add</mat-icon> Crear primera fase
+      </button>
+    </div>
+  } @else {
+
+    <!-- ── Main flat table ───────────────────────────────────────────────────── -->
+    <div class="minutograma-table__scroll-wrapper">
+      <table
+        mat-table
+        [dataSource]="flatRows()"
+        cdkDropList
+        (cdkDropListDropped)="drop($event)"
+        [trackBy]="trackByKind"
+        class="minutograma-table__mat-table mat-elevation-z0"
+      >
+
+        <!-- ── PHASE HEADER column def (spans all cols) ─────────────────────── -->
+        <ng-container matColumnDef="phaseHeader">
+          <!-- Hidden th keeps Angular Material happy; width:0 so it doesn't shift columns -->
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__phase-header-th"></th>
+          <td
+            mat-cell
+            *matCellDef="let row"
+            [attr.colspan]="displayedColumns.length"
+            class="minutograma-table__phase-cell"
+            [style.--phase-color]="row.data.color"
+          >
+            @if (row.data.id !== '__orphan__') {
+              <div class="phase-header">
+                <div class="phase-header__left">
+                  <mat-icon class="phase-header__icon">view_timeline</mat-icon>
+                  <input
+                    class="phase-header__name-input"
+                    [value]="row.data.name"
+                    (change)="updatePhaseName(row.data.id, $any($event.target).value)"
+                    placeholder="Nombre de la fase"
+                  />
+                </div>
+                <div class="phase-header__meta">
+                  <span class="phase-header__duration">{{ phaseDuration(row.data.id) }}</span>
+                  <!-- Color picker -->
+                  <div class="phase-header__colors">
+                    @for (c of ['#004066','#065f46','#5b21b6','#b45309','#be185d','#0369a1','#374151']; track c) {
+                      <button
+                        class="phase-header__color-dot"
+                        [style.background]="c"
+                        [class.phase-header__color-dot--active]="row.data.color === c"
+                        (click)="updatePhaseColor(row.data.id, c)"
+                        matTooltip="{{ c }}"
+                      ></button>
+                    }
+                  </div>
+                </div>
+                <div class="phase-header__actions">
+                  <button
+                    mat-icon-button
+                    class="phase-header__add-btn"
+                    (click)="addStepToPhase(row.data.id)"
+                    matTooltip="Agregar paso a esta fase"
+                  >
+                    <mat-icon>add_circle_outline</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    class="phase-header__del-btn"
+                    (click)="removePhase(row.data.id)"
+                    matTooltip="Eliminar fase"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <!-- Orphan steps — show a phase selector to bulk-reassign them -->
+              <div class="phase-header phase-header--orphan">
+                <mat-icon>warning_amber</mat-icon>
+                <span>Sin Fase Asignada</span>
+                @if (service.phases().length > 0) {
+                  <span class="phase-header__orphan-arrow">→</span>
+                  <mat-select
+                    class="phase-header__orphan-select"
+                    placeholder="Mover a fase..."
+                    (selectionChange)="assignOrphanStepsToPhase($event.value)"
+                  >
+                    @for (p of service.phases(); track p.id) {
+                      <mat-option [value]="p.id">{{ p.name }}</mat-option>
+                    }
+                  </mat-select>
+                } @else {
+                  <span class="phase-header__orphan-hint">Crea una fase primero y luego reasigna los pasos</span>
+                }
+              </div>
+            }
+          </td>
+        </ng-container>
+
+        <!-- ── STEP columns ─────────────────────────────────────────────────── -->
+
+        <!-- Drag handle + order # -->
+        <ng-container matColumnDef="drag">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell minutograma-table__header-cell--center">#</th>
+          <td mat-cell *matCellDef="let row" cdkDragHandle>
+            <div class="minutograma-table__drag-cell">
+              <mat-icon class="minutograma-table__drag-icon">drag_indicator</mat-icon>
+              <span class="minutograma-table__order-num">{{ row.data.order }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Actividad -->
+        <ng-container matColumnDef="activity">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell">Actividad</th>
+          <td mat-cell *matCellDef="let row">
+            <input
+              class="minutograma-table__inline-input minutograma-table__inline-input--activity"
+              [value]="row.data.activity"
+              (change)="updateField(row.data.id, 'activity', $any($event.target).value)"
+              placeholder="Descripción de la actividad"
+            />
+          </td>
+        </ng-container>
+
+        <!-- Componente -->
+        <ng-container matColumnDef="component">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell">Componente</th>
+          <td mat-cell *matCellDef="let row" class="minutograma-table__type-cell">
+            <mat-select
+              class="minutograma-table__component-select"
+              [value]="row.data.component"
+              (selectionChange)="updateField(row.data.id, 'component', $event.value)"
+            >
+              @for (c of components(); track c) {
+                <mat-option [value]="c">{{ c }}</mat-option>
+              }
+            </mat-select>
+          </td>
+        </ng-container>
+
+        <!-- Responsable -->
+        <ng-container matColumnDef="responsible">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell">Responsable</th>
+          <td mat-cell *matCellDef="let row" class="minutograma-table__type-cell">
+            <mat-select
+              class="minutograma-table__responsible-select"
+              [value]="row.data.responsible"
+              (selectionChange)="updateField(row.data.id, 'responsible', $event.value)"
+            >
+              @for (opt of responsibles(); track opt) {
+                <mat-option [value]="opt">{{ opt }}</mat-option>
+              }
+            </mat-select>
+          </td>
+        </ng-container>
+
+        <!-- Hora Inicio -->
+        <ng-container matColumnDef="startTime">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell">Inicio</th>
+          <td mat-cell *matCellDef="let row">
+            <input
+              class="minutograma-table__time-input"
+              type="time"
+              [value]="row.data.startTime"
+              (change)="onStartTimeChange(row.data.id, $any($event.target).value)"
+            />
+          </td>
+        </ng-container>
+
+        <!-- Duración — editable, acepta "30m" · "1h" · "1h 20m" -->
+        <ng-container matColumnDef="duration">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell">Duración</th>
+          <td mat-cell *matCellDef="let row">
+            <input
+              class="minutograma-table__duration-input"
+              [value]="formatDuration(row.data.duration)"
+              placeholder="ej. 30m"
+              (blur)="onDurationInput(row.data.id, $any($event.target).value)"
+              (keydown.enter)="onDurationInput(row.data.id, $any($event.target).value); $any($event.target).blur()"
+              matTooltip="30m · 1h · 1h 20m"
+            />
+          </td>
+        </ng-container>
+
+        <!-- Hora Fin -->
+        <ng-container matColumnDef="endTime">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell">Fin</th>
+          <td mat-cell *matCellDef="let row">
+            <input
+              class="minutograma-table__time-input"
+              type="time"
+              [value]="row.data.endTime"
+              (change)="onEndTimeChange(row.data.id, $any($event.target).value)"
+            />
+          </td>
+        </ng-container>
+
+        <!-- Observaciones -->
+        <ng-container matColumnDef="observations">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell">Notas / Observaciones</th>
+          <td mat-cell *matCellDef="let row">
+            <input
+              class="minutograma-table__inline-input minutograma-table__inline-input--obs"
+              [value]="row.data.observations"
+              (change)="updateField(row.data.id, 'observations', $any($event.target).value)"
+              placeholder="Observaciones"
+            />
+          </td>
+        </ng-container>
+
+        <!-- Actions -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="minutograma-table__header-cell"></th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-icon-button
+              class="minutograma-table__delete-btn"
+              (click)="removeRow(row.data.id)"
+              matTooltip="Eliminar paso"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <!-- ── Row definitions ─────────────────────────────────────────────── -->
+
+        <!-- Sticky column header -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" class="minutograma-table__header-row"></tr>
+
+        <!-- Phase header row — single spanning cell -->
+        <tr
+          mat-row
+          *matRowDef="let row; columns: ['phaseHeader']; when: isPhaseRow"
+          class="minutograma-table__phase-row"
+          [style.--phase-color]="row.data.color"
+          cdkDragDisabled
+        ></tr>
+
+        <!-- Step row -->
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns; when: isStepRow"
+          cdkDrag
+          [cdkDragData]="row"
+          class="minutograma-table__step-row"
+        ></tr>
+
+        <!-- Empty state -->
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell minutograma-table__empty" [attr.colspan]="displayedColumns.length">
+            Sin pasos. Agrega una fase y luego sus actividades.
+          </td>
+        </tr>
+
+      </table>
+    </div>
+
+    <!-- ── Summary bar ──────────────────────────────────────────────────────── -->
+    @if (totalDuration() > 0) {
+      <div class="minutograma-table__summary">
+        <mat-icon>timer</mat-icon>
+        <span>Duración total estimada: <strong>{{ totalDurationFormatted() }}</strong></span>
+        <span class="minutograma-table__summary-steps">{{ service.steps().length }} paso(s)</span>
+      </div>
+    }
+
+  }
+
+  <!-- ── Add Phase button ──────────────────────────────────────────────────── -->
+  <div class="minutograma-table__add-phase">
+    <button mat-stroked-button color="primary" (click)="addPhase()">
+      <mat-icon>add</mat-icon>
+      Agregar fase
+    </button>
+  </div>
+
+</div>

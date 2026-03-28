@@ -1,0 +1,42 @@
+{
+  "name": "minutegram",
+  "version": "1.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng s --o",
+    "dev": "ng serve --configuration development",
+    "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "watch": "ng build --watch --configuration development",
+    "preview": "npm run build:prod && npx serve dist/minutegram/browser",
+    "deploy": "npm run build:prod",
+    "test": "ng test"
+  },
+  "private": true,
+  "packageManager": "npm@11.6.0",
+  "dependencies": {
+    "@angular/animations": "^21.2.3",
+    "@angular/cdk": "^21.2.2",
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/material": "^21.2.2",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "@dhutaryan/ngx-mat-timepicker": "^21.0.0",
+    "@supabase/supabase-js": "^2.99.2",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.2",
+    "@angular/cli": "^21.2.2",
+    "@angular/compiler-cli": "^21.2.0",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2"
+  }
+}

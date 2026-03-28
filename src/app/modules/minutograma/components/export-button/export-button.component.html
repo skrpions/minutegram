@@ -1,0 +1,13 @@
+<button
+  mat-flat-button
+  color="accent"
+  [disabled]="isExporting()"
+  (click)="export()"
+>
+  @if (isExporting()) {
+    <mat-spinner diameter="20" />
+  } @else {
+    <mat-icon>download</mat-icon>
+  }
+  Exportar Excel
+</button>

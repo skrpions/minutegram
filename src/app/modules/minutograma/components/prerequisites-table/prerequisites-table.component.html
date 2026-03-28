@@ -1,0 +1,138 @@
+<div class="prerequisites-table">
+  <div class="prerequisites-table__scroll-wrapper">
+    <table
+      mat-table
+      [dataSource]="prerequisites()"
+      cdkDropList
+      (cdkDropListDropped)="drop($event)"
+      class="prerequisites-table__mat-table mat-elevation-z0"
+    >
+      <!-- Order / Drag Column -->
+      <ng-container matColumnDef="order">
+        <th mat-header-cell *matHeaderCellDef class="prerequisites-table__header-cell">#</th>
+        <td mat-cell *matCellDef="let row" cdkDragHandle>
+          <div class="prerequisites-table__drag-cell">
+            <mat-icon class="prerequisites-table__drag-icon">drag_indicator</mat-icon>
+            <span class="prerequisites-table__order-num">{{ row.order }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Category Column -->
+      <ng-container matColumnDef="category">
+        <th mat-header-cell *matHeaderCellDef class="prerequisites-table__header-cell">Categoría</th>
+        <td mat-cell *matCellDef="let row">
+          <input
+            class="prerequisites-table__inline-input"
+            [value]="row.category"
+            (change)="updateField(row.id, 'category', $any($event.target).value)"
+            placeholder="Categoría"
+          />
+        </td>
+      </ng-container>
+
+      <!-- Activity Column -->
+      <ng-container matColumnDef="activity">
+        <th mat-header-cell *matHeaderCellDef class="prerequisites-table__header-cell">Actividad</th>
+        <td mat-cell *matCellDef="let row">
+          <input
+            class="prerequisites-table__inline-input"
+            [value]="row.activity"
+            (change)="updateField(row.id, 'activity', $any($event.target).value)"
+            placeholder="Descripción de la actividad"
+          />
+        </td>
+      </ng-container>
+
+      <!-- Responsible Column -->
+      <ng-container matColumnDef="responsible">
+        <th mat-header-cell *matHeaderCellDef class="prerequisites-table__header-cell">Responsable</th>
+        <td mat-cell *matCellDef="let row" class="prerequisites-table__type-cell">
+          <mat-select
+            class="prerequisites-table__responsible-select"
+            [value]="row.responsible"
+            (selectionChange)="updateField(row.id, 'responsible', $event.value)"
+          >
+            @for (opt of responsibles(); track opt) {
+              <mat-option [value]="opt">{{ opt }}</mat-option>
+            }
+          </mat-select>
+        </td>
+      </ng-container>
+
+      <!-- Status Column — mat-select -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef class="prerequisites-table__header-cell">Estado</th>
+        <td mat-cell *matCellDef="let row" class="prerequisites-table__status-cell">
+          <mat-select
+            class="prerequisites-table__status-select"
+            [ngClass]="getStatusClass(row.status)"
+            [value]="row.status"
+            (selectionChange)="updateField(row.id, 'status', $event.value)"
+            panelClass="status-select-panel"
+          >
+            @for (opt of statusOptions; track opt) {
+              <mat-option [value]="opt" [ngClass]="'status-option--' + opt.toLowerCase().replace(' ', '-')">
+                {{ opt }}
+              </mat-option>
+            }
+          </mat-select>
+        </td>
+      </ng-container>
+
+      <!-- Observations Column -->
+      <ng-container matColumnDef="observations">
+        <th mat-header-cell *matHeaderCellDef class="prerequisites-table__header-cell">Observaciones</th>
+        <td mat-cell *matCellDef="let row">
+          <input
+            class="prerequisites-table__inline-input"
+            [value]="row.observations"
+            (change)="updateField(row.id, 'observations', $any($event.target).value)"
+            placeholder="Observaciones"
+          />
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="prerequisites-table__header-cell"></th>
+        <td mat-cell *matCellDef="let row">
+          <button
+            mat-icon-button
+            class="prerequisites-table__delete-btn"
+            (click)="removeRow(row.id)"
+            matTooltip="Eliminar fila"
+          >
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns" class="prerequisites-table__header-row"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        cdkDrag
+        [cdkDragData]="row"
+        class="prerequisites-table__data-row"
+      ></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell prerequisites-table__empty" [attr.colspan]="displayedColumns.length">
+          <mat-icon>checklist</mat-icon>
+          <span>Sin prerrequisitos. Agrega uno con el botón de abajo.</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="prerequisites-table__footer">
+    <button mat-stroked-button color="primary" (click)="addRow()" class="prerequisites-table__add-btn">
+      <mat-icon>add</mat-icon>
+      Agregar prerrequisito
+    </button>
+    @if (prerequisites().length > 0) {
+      <span class="prerequisites-table__count">{{ prerequisites().length }} elemento(s)</span>
+    }
+  </div>
+</div>
