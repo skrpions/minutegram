@@ -1,23 +1,24 @@
 export const COMPONENTS = [
-  'Gateway',
+  'Onboarding Web',
+  'Onboarding Ikigii',
+  'Actualización de Datos',
   'Appian',
+  'API Gateway',
   'Comunicación',
   'Infraestructura',
   'Jira',
-  'Onboarding Ikigii',
-  'Onboarding Web',
-  'Actualización de Datos',
   'Todos',
   'Towerbank'
 ] as const;
 
 export const RESPONSIBLES = [
   'Nestor Martínez - Frontend',
-  'Danier Vanegas - Gateway',
-  'Daniel Acevedo - Infrastructure',
+  'Danier Vanegas - API Gateway',
   'Nidia Sua - PM / Tech Lead',
+  'Daniel Acevedo - Infrastructure',
+  'Laura Renda - Towerbank',
+  'Cristian Gonzáles - Towerbank',
   'Robert Campos - Impera',
-  'Laura Renda - QA Towerbank',
   'Todos',
 ];
 

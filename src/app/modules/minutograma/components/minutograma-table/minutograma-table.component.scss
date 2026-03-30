@@ -46,13 +46,14 @@
 
   // ── Phase header row ───────────────────────────────────────────────────────
   &__phase-row {
-    background: var(--phase-color, #004066) !important;
+    background: color-mix(in srgb, var(--phase-color, #004066) 14%, white) !important;
     height: 3rem;
 
     td {
-      background: var(--phase-color, #004066) !important;
+      background: color-mix(in srgb, var(--phase-color, #004066) 14%, white) !important;
       padding: 0 !important;
-      border-bottom: none !important;
+      border-top: 2px solid var(--phase-color, #004066) !important;
+      border-bottom: 2px solid var(--phase-color, #004066) !important;
     }
   }
 
@@ -167,11 +168,31 @@
     color: #0369a1;
   }
 
-  // ── Component select ──────────────────────────────────────────────────────
-  &__component-select {
+  // ── Component / Responsible selects ──────────────────────────────────────
+  &__component-select,
+  &__responsible-select {
     font-size: 0.8125rem !important;
     min-width: 9rem;
-    padding: 0 0.375rem;
+
+    ::ng-deep .mat-mdc-select-trigger {
+      border: 0.0625rem solid #e2e8f0;
+      border-radius: 0.375rem;
+      padding: 0.25rem 0.5rem;
+      background: #f8fafc;
+      min-height: 1.875rem;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    &:hover ::ng-deep .mat-mdc-select-trigger {
+      border-color: #94a3b8;
+      background: #fff;
+    }
+
+    &.mat-mdc-select-panel-open ::ng-deep .mat-mdc-select-trigger {
+      border-color: #006380;
+      background: #fff;
+      box-shadow: 0 0 0 0.1875rem rgba(0, 99, 128, 0.1);
+    }
   }
 
   // ── Delete button ─────────────────────────────────────────────────────────
@@ -252,7 +273,7 @@
   gap: 0.75rem;
   padding: 0 1rem;
   height: 3rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1a202c;
 
   &__left {
     display: flex;
@@ -273,9 +294,9 @@
   &__name-input {
     background: transparent;
     border: none;
-    border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-bottom: 0.0625rem solid rgba(0, 0, 0, 0.2);
     outline: none;
-    color: #fff;
+    color: #1a202c;
     font-size: 0.9375rem;
     font-weight: 700;
     font-family: 'Roboto', sans-serif;
@@ -285,8 +306,8 @@
     padding: 0.125rem 0;
     transition: border-color 0.15s ease;
 
-    &::placeholder { color: rgba(255, 255, 255, 0.5); }
-    &:focus { border-bottom-color: rgba(255, 255, 255, 0.8); }
+    &::placeholder { color: rgba(0, 0, 0, 0.35); }
+    &:focus { border-bottom-color: var(--phase-color, #004066); }
   }
 
   &__meta {
@@ -299,7 +320,7 @@
   &__duration {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(0, 0, 0, 0.55);
     white-space: nowrap;
   }
 
@@ -319,7 +340,7 @@
     padding: 0;
 
     &:hover { transform: scale(1.25); }
-    &--active { border-color: rgba(255, 255, 255, 0.9) !important; transform: scale(1.2); }
+    &--active { border-color: rgba(0, 0, 0, 0.55) !important; transform: scale(1.2); }
   }
 
   &__actions {
@@ -329,21 +350,21 @@
   }
 
   &__add-btn {
-    color: rgba(255, 255, 255, 0.85) !important;
-    &:hover { color: #fff !important; background: rgba(255,255,255,0.15) !important; }
+    color: rgba(0, 0, 0, 0.5) !important;
+    &:hover { color: #1a202c !important; background: rgba(0, 0, 0, 0.07) !important; }
   }
 
   &__del-btn {
-    color: rgba(255, 255, 255, 0.5) !important;
-    &:hover { color: rgba(255, 220, 220, 0.9) !important; background: rgba(255,255,255,0.1) !important; }
+    color: rgba(0, 0, 0, 0.3) !important;
+    &:hover { color: rgba(185, 28, 28, 0.85) !important; background: rgba(0, 0, 0, 0.05) !important; }
   }
 
   &--orphan {
     gap: 0.5rem;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(0, 0, 0, 0.65);
     font-size: 0.875rem;
     font-weight: 600;
-    background: #64748b !important; // neutral gray for orphan row
+    background: #F1F5F9 !important;
   }
 
   &__orphan-arrow {
@@ -352,16 +373,16 @@
   }
 
   &__orphan-select {
-    background: rgba(255, 255, 255, 0.15) !important;
+    background: rgba(0, 0, 0, 0.06) !important;
     border-radius: 0.375rem !important;
-    color: #fff !important;
+    color: #1a202c !important;
     font-size: 0.8125rem !important;
     min-width: 18rem;
     padding: 0 0.5rem;
 
     .mat-mdc-select-value,
-    .mat-mdc-select-placeholder { color: rgba(255,255,255,0.8) !important; }
-    .mat-mdc-select-arrow { color: rgba(255,255,255,0.7) !important; }
+    .mat-mdc-select-placeholder { color: rgba(0, 0, 0, 0.65) !important; }
+    .mat-mdc-select-arrow { color: rgba(0, 0, 0, 0.45) !important; }
   }
 
   &__orphan-hint {

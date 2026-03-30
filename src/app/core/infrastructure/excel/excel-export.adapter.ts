@@ -19,8 +19,23 @@ const PHASE_COLORS: Record<string, string> = {
   '#374151': '374151',
 };
 
+const PHASE_COLORS_LIGHT: Record<string, string> = {
+  '004066': 'D0E8F2',
+  '065F46': 'D1FAE5',
+  '5B21B6': 'EDE9FE',
+  'B45309': 'FEF3C7',
+  'BE185D': 'FCE7F3',
+  '0369A1': 'E0F2FE',
+  '374151': 'E5E7EB',
+};
+
 function phaseHex(color: string): string {
   return PHASE_COLORS[color.toLowerCase()] ?? HEADER_BG;
+}
+
+function phaseHexLight(color: string): string {
+  const dark = phaseHex(color).toUpperCase();
+  return PHASE_COLORS_LIGHT[dark] ?? 'E8F4F8';
 }
 
 type CellStyle = {
@@ -58,14 +73,14 @@ function infoLabelStyle(): CellStyle {
   };
 }
 
-function phaseRowStyle(bgHex: string): CellStyle {
+function phaseRowStyle(lightHex: string, darkHex: string): CellStyle {
   return {
-    font: { bold: true, color: { rgb: WHITE }, sz: 12, name: 'Times New Roman' },
-    fill: { fgColor: { rgb: bgHex }, patternType: 'solid' },
+    font: { bold: true, color: { rgb: '1A202C' }, sz: 12, name: 'Times New Roman' },
+    fill: { fgColor: { rgb: lightHex }, patternType: 'solid' },
     alignment: { horizontal: 'left', vertical: 'center', wrapText: false },
     border: {
-      top:    { style: 'medium', color: { rgb: bgHex } },
-      bottom: { style: 'medium', color: { rgb: bgHex } },
+      top:    { style: 'medium', color: { rgb: darkHex } },
+      bottom: { style: 'medium', color: { rgb: darkHex } },
     },
   };
 }
@@ -105,9 +120,32 @@ function statusStyle(status: string): CellStyle {
   };
 }
 
+const URL_REGEX = /https?:\/\/[^\s]+/;
+
+function linkCellStyle(bg?: string): CellStyle {
+  return {
+    font: { sz: 12, name: 'Times New Roman', color: { rgb: '0563C1' }, underline: true },
+    fill: { fgColor: { rgb: bg ?? GRAY_LIGHT }, patternType: 'solid' },
+    alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+    border: {
+      top:    { style: 'hair', color: { rgb: GRAY_MID } },
+      bottom: { style: 'hair', color: { rgb: GRAY_MID } },
+      left:   { style: 'hair', color: { rgb: GRAY_MID } },
+      right:  { style: 'hair', color: { rgb: GRAY_MID } },
+    },
+  };
+}
+
 function setCell(ws: XLSX.WorkSheet, r: number, c: number, v: unknown, s: CellStyle): void {
   const ref = XLSX.utils.encode_cell({ r, c });
   ws[ref] = { v, s };
+}
+
+function setCellObservation(ws: XLSX.WorkSheet, r: number, c: number, v: unknown, bg: string): void {
+  const ref = XLSX.utils.encode_cell({ r, c });
+  const url = typeof v === 'string' ? v.match(URL_REGEX)?.[0] : null;
+  const s = url ? linkCellStyle(bg) : cellStyle(bg);
+  ws[ref] = url ? { v, l: { Target: url }, s, t: 's' } : { v, s };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -164,7 +202,7 @@ export class ExcelExportAdapter {
       setCell(ws, r, 2, p.activity,     cellStyle(bg));
       setCell(ws, r, 3, p.responsible,  cellStyle(bg));
       setCell(ws, r, 4, p.status,       statusStyle(p.status));
-      setCell(ws, r, 5, p.observations, cellStyle(bg));
+      setCellObservation(ws, r, 5, p.observations, bg);
     });
 
     const lastRow = m.prerequisites.length;
@@ -188,6 +226,7 @@ export class ExcelExportAdapter {
 
     let rowIdx = 1;
     const phases = m.phases ?? [];
+    const rowHeights: { hpx: number }[] = [{ hpx: 28 }]; // row 0 = header
 
     const writeStepRow = (s: Minutogram['steps'][number], i: number): void => {
       const bg = i % 2 === 0 ? WHITE : 'F8FAFC';
@@ -198,7 +237,8 @@ export class ExcelExportAdapter {
       setCell(ws, rowIdx, 4, s.startTime,    cellStyle(bg, false, true));
       setCell(ws, rowIdx, 5, s.endTime,      cellStyle(bg, false, true));
       setCell(ws, rowIdx, 6, s.duration > 0 ? `${s.duration} min` : '—', cellStyle(bg, true, true));
-      setCell(ws, rowIdx, 7, s.observations, cellStyle(bg));
+      setCellObservation(ws, rowIdx, 7, s.observations, bg);
+      rowHeights[rowIdx] = { hpx: 22 };
       rowIdx++;
     };
 
@@ -207,14 +247,16 @@ export class ExcelExportAdapter {
       if (phaseSteps.length === 0) return;
 
       const pHex = phaseHex(phase.color);
+      const pHexLight = phaseHexLight(phase.color);
       const pDuration = phaseSteps.reduce((sum, s) => sum + (s.duration || 0), 0);
       const phaseLabel = `${phase.name}   ·   ${pDuration} min`;
 
       for (let c = 0; c < cols.length; c++) {
-        setCell(ws, rowIdx, c, c === 0 ? phaseLabel : '', phaseRowStyle(pHex));
+        setCell(ws, rowIdx, c, c === 0 ? phaseLabel : '', phaseRowStyle(pHexLight, pHex));
       }
       if (!ws['!merges']) ws['!merges'] = [];
       ws['!merges'].push({ s: { r: rowIdx, c: 0 }, e: { r: rowIdx, c: cols.length - 1 } });
+      rowHeights[rowIdx] = { hpx: 38 };
       rowIdx++;
 
       phaseSteps.forEach((s, i) => writeStepRow(s, i));
@@ -224,7 +266,7 @@ export class ExcelExportAdapter {
       { wch: 5 }, { wch: 42 }, { wch: 18 }, { wch: 20 },
       { wch: 11 }, { wch: 11 }, { wch: 10 }, { wch: 70 },
     ];
-    ws['!rows'] = [{ hpx: 28 }];
+    ws['!rows'] = rowHeights;
     ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rowIdx - 1, c: cols.length - 1 } });
     ws['!pageSetup'] = { orientation: 'landscape', fitToPage: true, fitToWidth: 1 };
     XLSX.utils.book_append_sheet(wb, ws, 'Minutograma');
