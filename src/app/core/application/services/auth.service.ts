@@ -22,13 +22,17 @@ export class AuthService {
     this.isLoading.set(false);
 
     this.supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AuthService] onAuthStateChange:', event, '| session:', !!session);
       if (event === 'SIGNED_OUT') {
         this.user.set(null);
         this.router.navigate(['/login']);
         return;
       }
-      // TOKEN_REFRESHED: the client already has the new token — no need to reload profile
-      if (event === 'TOKEN_REFRESHED') return;
+      // TOKEN_REFRESHED or SIGNED_IN when the user is already loaded: the client
+      // already has the new token — making a Supabase query here would contend with
+      // any in-flight save() call (both internally call getSession()), causing a
+      // lock conflict that freezes the spinner indefinitely.
+      if (event === 'TOKEN_REFRESHED' || this.user()) return;
 
       if (session) {
         await this.loadProfile(session.user.id);

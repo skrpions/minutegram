@@ -49,24 +49,7 @@ export class SupabaseAdapter extends MinutogramRepository {
     return this.mapRow(data);
   }
 
-  /** Ensures the Supabase session is valid. Proactively refreshes if token expires within 5 min. */
-  private async ensureAuthenticated(): Promise<void> {
-    const { data: { session }, error } = await this.supabase.auth.getSession();
-    if (error) throw error;
-    if (!session) {
-      const { error: refreshErr } = await this.supabase.auth.refreshSession();
-      if (refreshErr) throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
-      return;
-    }
-    // Proactively refresh if the token expires within the next 5 minutes
-    const expiresAt = (session.expires_at ?? 0) * 1000;
-    if (expiresAt - Date.now() < 5 * 60 * 1000) {
-      await this.supabase.auth.refreshSession();
-    }
-  }
-
   override async save(minutogram: Minutogram): Promise<void> {
-    await this.ensureAuthenticated();
     const { deploymentInfo: d } = minutogram;
     const userId = this.auth.user()?.id;
 
@@ -123,7 +106,6 @@ export class SupabaseAdapter extends MinutogramRepository {
   }
 
   override async delete(id: string): Promise<void> {
-    await this.ensureAuthenticated();
     const { error } = await this.supabase.from('minutograms').delete().eq('id', id);
     if (error) throw error;
   }

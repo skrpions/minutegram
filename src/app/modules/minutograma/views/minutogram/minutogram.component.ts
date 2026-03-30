@@ -62,8 +62,15 @@ export class MinutogramaComponent implements OnInit {
         duration: 3000,
         panelClass: 'snack-success',
       });
-    } catch {
-      this.snackBar.open('Error al guardar. Intenta de nuevo.', 'OK', { duration: 4000 });
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.message === 'SAVE_TIMEOUT';
+      this.snackBar.open(
+        isTimeout
+          ? 'La sesión tardó en responder. Intenta guardar de nuevo.'
+          : 'Error al guardar. Intenta de nuevo.',
+        'OK',
+        { duration: 5000 },
+      );
     }
   }
 

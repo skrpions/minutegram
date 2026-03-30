@@ -97,11 +97,20 @@ export class MinutogramaService {
   }
 
   async save(): Promise<void> {
+    console.log('[MinutogramaService] save() — inicio');
     this._saving.set(true);
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('SAVE_TIMEOUT')), 15_000),
+    );
     try {
-      await this.saveUseCase.execute(this._minutogram());
+      await Promise.race([this.saveUseCase.execute(this._minutogram()), timeout]);
+      console.log('[MinutogramaService] save() — éxito');
+    } catch (err) {
+      console.error('[MinutogramaService] save() — error:', err);
+      throw err;
     } finally {
       this._saving.set(false);
+      console.log('[MinutogramaService] save() — finally: saving=false');
     }
   }
 
