@@ -167,11 +167,11 @@ export class ExcelExportAdapter {
       ['Proyecto',             info.project],
       ['Sprint',               info.sprint.replace(/^sprint\s*/i, '').trim()],
       ['Versión',              info.version],
-      ['Resposables',          info.responsible],
+      ['Responsables',         info.responsible.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean).join('\n')],
       ['Fecha de Despliegue',  info.date],
       ['Descripción',          info.description],
       ['Total Pasos',          String(m.steps.length)],
-      ['Duración Total (min)', String(m.steps.reduce((s, x) => s + (x.duration || 0), 0))],
+      ['Duración Total', (() => { const t = m.steps.reduce((s, x) => s + (x.duration || 0), 0); const h = Math.floor(t / 60); const min = t % 60; return h > 0 ? `${h}h ${min}min` : `${min}min`; })()],
     ];
 
     infoRows.forEach(([label, value], i) => {
@@ -180,7 +180,6 @@ export class ExcelExportAdapter {
     });
 
     ws['!cols'] = [{ wch: 24 }, { wch: 60 }];
-    ws['!rows'] = [{ hpx: 24 }];
     ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: infoRows.length - 1, c: 1 } });
     ws['!pageSetup'] = { orientation: 'portrait' };
     XLSX.utils.book_append_sheet(wb, ws, 'Información');
