@@ -155,7 +155,7 @@ export class ExcelExportAdapter {
     this.buildInfoSheet(workbook, minutogram);       // Sheet 1: Información
     this.buildPrereqSheet(workbook, minutogram);     // Sheet 2: Prerrequisitos
     this.buildStepsSheet(workbook, minutogram);      // Sheet 3: Minutograma
-    XLSX.writeFile(workbook, 'minutograma-despliegue.xlsx');
+    XLSX.writeFile(workbook, 'Minutograma-Despliegue.xlsx');
   }
 
   // ── Sheet 1: Información del Despliegue ──────────────────────────────────────
@@ -210,7 +210,7 @@ export class ExcelExportAdapter {
       { wch: 5 }, { wch: 20 }, { wch: 45 },
       { wch: 22 }, { wch: 14 }, { wch: 45 },
     ];
-    ws['!rows'] = [{ hpx: 24 }];
+    ws['!rows'] = [{ hpx: 28 }];
     ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: lastRow, c: NUM_COLS - 1 } });
     ws['!pageSetup'] = { orientation: 'landscape' };
     XLSX.utils.book_append_sheet(wb, ws, 'Prerrequisitos');
@@ -238,7 +238,6 @@ export class ExcelExportAdapter {
       setCell(ws, rowIdx, 5, s.endTime,      cellStyle(bg, false, true));
       setCell(ws, rowIdx, 6, s.duration > 0 ? `${s.duration} min` : '—', cellStyle(bg, true, true));
       setCellObservation(ws, rowIdx, 7, s.observations, bg);
-      rowHeights[rowIdx] = { hpx: 22 };
       rowIdx++;
     };
 
@@ -256,7 +255,7 @@ export class ExcelExportAdapter {
       }
       if (!ws['!merges']) ws['!merges'] = [];
       ws['!merges'].push({ s: { r: rowIdx, c: 0 }, e: { r: rowIdx, c: cols.length - 1 } });
-      rowHeights[rowIdx] = { hpx: 38 };
+      rowHeights[rowIdx] = { hpx: 30 };
       rowIdx++;
 
       phaseSteps.forEach((s, i) => writeStepRow(s, i));
