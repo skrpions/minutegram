@@ -13,9 +13,8 @@ export const COMPONENTS = [
 
 export const RESPONSIBLES = [
   'Nestor Martínez - Frontend',
-  'Danier Vanegas - API Gateway',
+  'Cristian Ramírez - API Gateway',
   'Nidia Sua - PM / Tech Lead',
-  'Daniel Acevedo - Infrastructure',
   'Laura Renda - Towerbank',
   'Cristian Gonzáles - Towerbank',
   'Robert Campos - Impera',
