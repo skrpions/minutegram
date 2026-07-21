@@ -105,10 +105,7 @@ export class MinutogramaTableComponent {
   addStepToPhase(phaseId: string): void { this.service.addStep(phaseId); }
 
   assignOrphanStepsToPhase(phaseId: string): void {
-    const assignedIds = new Set(this.service.phases().map((p) => p.id));
-    this.service.steps()
-      .filter((s) => !assignedIds.has(s.phaseId))
-      .forEach((s) => this.service.updateStep(s.id, { phaseId }));
+    this.service.assignOrphanStepsToPhase(phaseId);
   }
 
   // ── Step helpers ──────────────────────────────────────────────────────────

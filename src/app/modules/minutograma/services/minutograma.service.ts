@@ -436,6 +436,17 @@ export class MinutogramaService {
     });
   }
 
+  /** Reassigns every step whose phaseId doesn't match a known phase to `phaseId`,
+   * then physically regroups steps by phase so `order` stays continuous. */
+  assignOrphanStepsToPhase(phaseId: string): void {
+    this._minutogram.update((m) => {
+      const phases = m.phases ?? [];
+      const knownIds = new Set(phases.map((p) => p.id));
+      const steps = m.steps.map((s) => (knownIds.has(s.phaseId) ? s : { ...s, phaseId }));
+      return { ...m, steps: this._regroupStepsByPhase(phases, steps), updatedAt: new Date().toISOString() };
+    });
+  }
+
   moveStep(from: number, to: number): void {
     this._minutogram.update((m) => {
       const items = m.steps.map((s) => ({ ...s }));
@@ -448,6 +459,22 @@ export class MinutogramaService {
   }
 
   // ── Internal helpers ──────────────────────────────────────────────────────────
+
+  /**
+   * Physically reorders `steps` to match the phases' order (steps keep their
+   * relative order within each phase; steps whose phaseId doesn't match any
+   * known phase are appended at the end), then renumbers `order` sequentially
+   * so it stays globally continuous across phases — never reset per phase.
+   */
+  private _regroupStepsByPhase(phases: Phase[], steps: MinutogramStep[]): MinutogramStep[] {
+    const grouped: MinutogramStep[] = [];
+    for (const phase of phases) {
+      grouped.push(...steps.filter((s) => s.phaseId === phase.id));
+    }
+    const knownIds = new Set(phases.map((p) => p.id));
+    grouped.push(...steps.filter((s) => !knownIds.has(s.phaseId)));
+    return grouped.map((s, i) => ({ ...s, order: i + 1 }));
+  }
 
   private normalizeMinutogram(raw: Minutogram): Minutogram {
     let phases = raw.phases ?? [];
@@ -463,15 +490,19 @@ export class MinutogramaService {
       }));
     }
 
+    const steps = rawSteps.map((s) => ({
+      ...s,
+      component: s.component ?? '',
+      ticketId: s.ticketId ?? '',
+      phaseId: s.phaseId ?? '',
+    }));
+
     return {
       ...raw,
       phases,
-      steps: rawSteps.map((s) => ({
-        ...s,
-        component: s.component ?? '',
-        ticketId: s.ticketId ?? '',
-        phaseId: s.phaseId ?? '',
-      })),
+      // Repairs any historical data where `order` and the phase grouping had
+      // drifted apart (e.g. saved before this fix, or edited directly).
+      steps: this._regroupStepsByPhase(phases, steps),
     };
   }
 }
