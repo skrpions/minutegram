@@ -297,9 +297,11 @@ export class MinutogramaService {
 
   addStep(phaseId: string): void {
     this._minutogram.update((m) => {
+      const clonedSteps = m.steps.map((s) => ({ ...s }));
+
       const newStep: MinutogramStep = {
         id: uuidv4(),
-        order: m.steps.length + 1,
+        order: 0,
         phaseId,
         activity: '',
         component: '',
@@ -310,7 +312,34 @@ export class MinutogramaService {
         ticketId: '',
         observations: '',
       };
-      return { ...m, steps: [...m.steps, newStep], updatedAt: new Date().toISOString() };
+
+      // Insert right after this phase's last existing step so the physical
+      // array order always matches the phase-grouped visual order (required
+      // for drag & drop indices and time cascading to stay in sync).
+      let insertAt = clonedSteps.length;
+      for (let i = clonedSteps.length - 1; i >= 0; i--) {
+        if (clonedSteps[i].phaseId === phaseId) { insertAt = i + 1; break; }
+      }
+      if (insertAt === clonedSteps.length) {
+        const phases = m.phases ?? [];
+        const phaseIdx = phases.findIndex((p) => p.id === phaseId);
+        const laterPhaseIds = new Set(phases.slice(phaseIdx + 1).map((p) => p.id));
+        const nextIdx = clonedSteps.findIndex((s) => laterPhaseIds.has(s.phaseId));
+        if (nextIdx !== -1) insertAt = nextIdx;
+      }
+
+      const steps = [
+        ...clonedSteps.slice(0, insertAt),
+        newStep,
+        ...clonedSteps.slice(insertAt),
+      ];
+      if (insertAt > 0) this._cascadeFrom(steps, insertAt);
+
+      return {
+        ...m,
+        steps: steps.map((s, i) => ({ ...s, order: i + 1 })),
+        updatedAt: new Date().toISOString(),
+      };
     });
   }
 
@@ -387,9 +416,15 @@ export class MinutogramaService {
   /** Propagates endTime → next startTime → next endTime from `fromIdx` onward. */
   private _cascadeFrom(steps: MinutogramStep[], fromIdx: number): void {
     for (let i = fromIdx; i < steps.length; i++) {
-      steps[i].startTime = steps[i - 1].endTime;
-      if (steps[i].duration > 0 && steps[i].startTime) {
+      const prevEndTime = steps[i - 1].endTime;
+      if (!prevEndTime) break;
+      steps[i].startTime = prevEndTime;
+      if (steps[i].duration > 0) {
         steps[i].endTime = addMinutesToTime(steps[i].startTime, steps[i].duration);
+      } else {
+        // Can't compute this step's endTime, so we can't propagate any
+        // further without overwriting downstream steps with stale data.
+        break;
       }
     }
   }
@@ -403,9 +438,11 @@ export class MinutogramaService {
 
   moveStep(from: number, to: number): void {
     this._minutogram.update((m) => {
-      const items = [...m.steps];
+      const items = m.steps.map((s) => ({ ...s }));
       const [moved] = items.splice(from, 1);
       items.splice(to, 0, moved);
+      const affectedFrom = Math.max(1, Math.min(from, to));
+      this._cascadeFrom(items, affectedFrom);
       return { ...m, steps: items.map((s, i) => ({ ...s, order: i + 1 })), updatedAt: new Date().toISOString() };
     });
   }

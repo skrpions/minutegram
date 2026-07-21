@@ -234,13 +234,12 @@
         <!-- Sticky column header -->
         <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" class="minutograma-table__header-row"></tr>
 
-        <!-- Phase header row — single spanning cell -->
+        <!-- Phase header row — single spanning cell (not cdkDrag, so it's never draggable) -->
         <tr
           mat-row
           *matRowDef="let row; columns: ['phaseHeader']; when: isPhaseRow"
           class="minutograma-table__phase-row"
           [style.--phase-color]="row.data.color"
-          cdkDragDisabled
         ></tr>
 
         <!-- Step row -->

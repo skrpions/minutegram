@@ -130,21 +130,25 @@ export class MinutogramaTableComponent {
 
   drop(event: CdkDragDrop<FlatRow[]>): void {
     if (event.previousIndex === event.currentIndex) return;
-    const flat = this.flatRows();
-    const dragged = flat[event.previousIndex];
-    if (dragged?.kind !== 'step') return;
 
-    let targetFlatIdx = event.currentIndex;
-    while (targetFlatIdx < flat.length && flat[targetFlatIdx].kind === 'phase') targetFlatIdx++;
-    const target = flat[Math.min(targetFlatIdx, flat.length - 1)];
-    if (!target || target.kind !== 'step') return;
+    // Only step rows carry `cdkDrag`, so CDK computes previousIndex/currentIndex
+    // over the step rows alone (phase header rows are not registered as
+    // draggable items and don't count). We must resolve positions against
+    // that same step-only ordering, not against the mixed `flatRows()` array.
+    const orderedSteps = this.flatRows()
+      .filter((r): r is { kind: 'step'; data: MinutogramStep } => r.kind === 'step')
+      .map((r) => r.data);
+
+    const dragged = orderedSteps[event.previousIndex];
+    const target = orderedSteps[event.currentIndex];
+    if (!dragged || !target || dragged.id === target.id) return;
 
     const steps = this.service.steps();
-    const prevIdx = steps.findIndex((s) => s.id === dragged.data.id);
-    const currIdx = steps.findIndex((s) => s.id === target.data.id);
+    const prevIdx = steps.findIndex((s) => s.id === dragged.id);
+    const currIdx = steps.findIndex((s) => s.id === target.id);
     if (prevIdx !== -1 && currIdx !== -1 && prevIdx !== currIdx) {
-      if (dragged.data.phaseId !== target.data.phaseId) {
-        this.service.updateStep(dragged.data.id, { phaseId: target.data.phaseId });
+      if (dragged.phaseId !== target.phaseId) {
+        this.service.updateStep(dragged.id, { phaseId: target.phaseId });
       }
       this.service.moveStep(prevIdx, currIdx);
     }
